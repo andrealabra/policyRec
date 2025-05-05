@@ -1,0 +1,133 @@
+---
+title: "stats306project"
+format: html
+editor: visual
+---
+
+## Analysis
+
+```{r}
+# Load required libraries
+library(tidyverse)
+library(janitor)
+library(forcats)
+
+# Read in your dataset (adjust path if needed)
+data <- read_csv("~/Downloads/healthdata.csv")
+
+# Clean column names
+data <- clean_names(data)
+
+# Check column names to verify
+glimpse(data)
+
+library(tidyverse)
+library(forcats)
+
+ggplot(data, aes(x = fct_infreq(primary_spoken_langauge))) +
+  geom_bar(aes(weight = number_of_eligible_individuals_who_plan_selected)) +
+  coord_flip() +
+  labs(
+    title = "Covered California Enrollment by Primary Language",
+    x = "Primary Spoken Language",
+    y = "Number of Individuals"
+  )
+
+
+
+#Time Trend by Language
+# Choose top languages but exclude English
+top_langs <- c("Spanish", "Mandarin", "Vietnamese", "Korean", "Tagalog", "Farsi", "Arabic")
+
+# Filter the data
+filtered_data <- data %>%
+  filter(primary_spoken_langauge %in% top_langs)
+
+# Time trend plot
+ggplot(filtered_data, aes(x = quarter_reporting,
+                          y = number_of_eligible_individuals_who_plan_selected,
+                          color = primary_spoken_langauge,
+                          group = primary_spoken_langauge)) +
+  geom_line(size = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    title = "Covered California Enrollment Trends by Language (Excluding English)",
+    x = "Quarter",
+    y = "Eligible Individuals",
+    color = "Language"
+  )
+
+
+#2. Total Enrollment by Language (Sorted)
+data %>%
+  filter(primary_spoken_langauge != "English") %>%
+  group_by(primary_spoken_langauge) %>%
+  summarise(total = sum(number_of_eligible_individuals_who_plan_selected, na.rm = TRUE)) %>%
+  arrange(desc(total)) %>%
+  ggplot(aes(x = fct_reorder(primary_spoken_langauge, total), y = total)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(
+    title = "Total Covered CA Enrollment by Language (Excluding English, 2016–2024)",
+    x = "Primary Language",
+    y = "Total Individuals"
+  )
+
+
+#3. Quarterly Share of Each Language (Stacked Bar)
+data %>%
+  filter(primary_spoken_langauge != "English") %>%
+  group_by(quarter_reporting, primary_spoken_langauge) %>%
+  summarise(total = sum(number_of_eligible_individuals_who_plan_selected, na.rm = TRUE)) %>%
+  ggplot(aes(x = quarter_reporting, y = total, fill = primary_spoken_langauge)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(
+    title = "Quarterly Enrollment by Language (Excluding English)",
+    x = "Quarter",
+    y = "Individuals",
+    fill = "Language"
+  )
+
+
+
+
+```
+
+## Extra slide 
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(janitor)
+library(scales)
+
+# Read the race dataset
+race_data <- read_csv("~/Downloads/extraHealth.csv") %>% 
+  clean_names()
+
+# Check column names to find the right ones
+glimpse(race_data)
+
+```
+
+```{r}
+race_data %>%
+  group_by(race) %>%
+  summarise(total = sum(number_of_eligible_individuals, na.rm = TRUE)) %>%
+  arrange(desc(total)) %>%
+  ggplot(aes(x = fct_reorder(race, total), y = total)) +
+  geom_col(fill = "#3366CC") +
+  geom_text(aes(label = comma(total)), hjust = -0.1, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Enrollment by Race in Covered California (QHP)",
+    x = "Race/Ethnicity",
+    y = "Total Individuals"
+  ) +
+  theme_minimal() +
+  expand_limits(y = max(race_data$number_of_eligible_individuals_who_plan_selected, na.rm = TRUE) * 1.1)
+
+```
